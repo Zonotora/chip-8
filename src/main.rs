@@ -1,5 +1,5 @@
+use clap::{App, Arg};
 use minifb::{Key, KeyRepeat, Window, WindowOptions};
-use std::env;
 use std::fs::File;
 use std::io::Read;
 
@@ -7,17 +7,22 @@ mod cpu;
 mod display;
 mod ram;
 
+const INPUT_ARG: &str = "INPUT";
+const WINDOW_SIZE_ARG: &str = "WINDOW_SIZE";
+const COLOR_ARG: &str = "COLOR";
+
 fn main() {
-    let args: Vec<String> = env::args().collect();
-    let file_name = "data/PONG";
+    let matches = get_argument_matches();
+    let file_name = matches.value_of(INPUT_ARG).unwrap();
+    let dimension = matches.value_of(WINDOW_SIZE_ARG).unwrap_or("640x320");
+
     let mut data = Vec::<u8>::new();
     File::open(file_name)
         .unwrap()
         .read_to_end(&mut data)
         .expect("File not found!");
 
-    let width: usize = 640;
-    let height: usize = 320;
+    let (width, height) = get_size_from_string(&dimension);
     let b_width: usize = 64;
     let b_height: usize = 32;
     let mut buffer: Vec<u32> = vec![0; b_width * b_height];
@@ -70,6 +75,44 @@ fn main() {
         }
         timer += 1;
     }
+}
+
+fn get_argument_matches<'a>() -> clap::ArgMatches<'a> {
+    App::new("CHIP-8 Emulator")
+        .version("0.1.0")
+        .about("A very simple CHIP-8 Emulator")
+        .arg(
+            Arg::with_name(INPUT_ARG)
+                .required(true)
+                .value_name("FILE")
+                .help("CHIP-8 ROM")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name(WINDOW_SIZE_ARG)
+                .short("s")
+                .long("size")
+                .value_name("WIDTHxHEIGHT")
+                .help("Set the size of the window (E.g. 1920x1080)")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name(COLOR_ARG)
+                .short("c")
+                .long("color")
+                .value_name("#XXXXXX")
+                .help("Set the color of the emulator (Not working)")
+                .takes_value(true),
+        )
+        .get_matches()
+}
+
+fn get_size_from_string(dim: &str) -> (usize, usize) {
+    let size: Vec<&str> = dim.split('x').collect();
+    (
+        size[0].parse::<usize>().unwrap_or(640),
+        size[1].parse::<usize>().unwrap_or(320),
+    )
 }
 
 fn from_u8_rgb(r: u8, g: u8, b: u8) -> u32 {
