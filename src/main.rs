@@ -23,49 +23,43 @@ fn main() {
         .expect("File not found!");
 
     let (width, height) = get_size_from_string(&dimension);
-    let b_width: usize = 64;
-    let b_height: usize = 32;
+    let (b_width, b_height) = (64, 32);
     let mut buffer: Vec<u32> = vec![0; b_width * b_height];
 
-    let mut cpu = cpu::Cpu::new();
+    let mut cpu = cpu::Cpu::new().load(data);
     let mut display = display::Display::new(b_width, b_height);
-    cpu.load(data);
 
-    let mut window = match Window::new("CHIP8 Emulator", width, height, WindowOptions::default()) {
-        Ok(win) => win,
-        Err(err) => {
-            println!("Unable to create window {}", err);
-            return;
-        }
-    };
+    let mut window = Window::new(
+        "CHIP8 Emulator",
+        width,
+        height,
+        WindowOptions {
+            resize: false,
+            ..WindowOptions::default()
+        },
+    )
+    .expect("Unable to Open Window");
     window.limit_update_rate(Some(std::time::Duration::from_millis(40)));
 
     let mut timer = 0;
-    let mut is_running = true;
+    let mut key = 0x0;
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        // window.get_keys_pressed(KeyRepeat::No).map(|keys| {
-        //     for t in keys {
-        //         match t {
-        //             Key::Space => is_running = true,
-        //             _ => (),
-        //         }
-        //     }
-        // });
+        if timer % 5 == 0 {
+            key = get_key_mapping(window.get_keys_pressed(KeyRepeat::No));
+        }
 
-        if timer % 1 == 0 && is_running {
-            let key = get_key_mapping(window.get_keys_pressed(KeyRepeat::No));
+        if timer % 1 == 0 {
             cpu.next(&mut display, key);
-            // is_running = false;
         }
 
         if timer % 10 == 0 {
             let screen = display.get_screen();
             for i in 0..b_height * b_width {
                 if screen[i] == 0x0 {
-                    buffer[i] = from_u8_rgb(0, 0, 0);
+                    buffer[i] = from_u8_rgb(212, 150, 44);
                 } else {
-                    buffer[i] = from_u8_rgb(255, 255, 255);
+                    buffer[i] = from_u8_rgb(255, 201, 54);
                 }
             }
 

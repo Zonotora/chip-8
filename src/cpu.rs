@@ -1,7 +1,6 @@
 use crate::display::Display;
 use crate::ram::Ram;
 use rand::Rng;
-use std::time;
 
 const START_ADR: u16 = 0x0200;
 const NNN: u16 = 0x0FFF;
@@ -32,12 +31,13 @@ impl Cpu {
         }
     }
 
-    pub fn load(&mut self, data: Vec<u8>) {
+    pub fn load(mut self, data: Vec<u8>) -> Cpu {
         let mut adr = START_ADR;
         for byte in data {
             self.ram.write(adr, byte);
             adr += 1;
         }
+        self
     }
 
     // runs the next instruction
